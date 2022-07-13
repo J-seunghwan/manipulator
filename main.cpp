@@ -1,8 +1,6 @@
 #include "Dxl.h"
-#include "Hmatrix.h"
+#include "Matrix.h"
 #include <ctime>
-
-#include <fstream>
 
 struct Ori {
 	double a = 0.0;//yaw
@@ -14,30 +12,22 @@ struct Angle {
 	double q[6] = { 0, };
 };
 
-dynamixel::PortHandler* Dxl::port = dynamixel::PortHandler::getPortHandler("COM4");
+dynamixel::PortHandler* Dxl::port = dynamixel::PortHandler::getPortHandler("COM6");
 
 Dxl dxl[6] = { Dxl(0), Dxl(1), Dxl(2), Dxl(3), Dxl(4), Dxl(5) };
 Hmatrix h, h6g;
 double L0 = 37, L1 = 66.25, L2 = 150, L3 = 83.75, L4 = 66.25, L5 = 41.50;
-std::ofstream wfile;
 
 void delay(int ms);
 Hmatrix fk(double q1, double q2, double q3, double q4, double q5, double q6);
 Angle ik(double x, double y, double z, double a, double b, double r, dynamixel::PacketHandler* packet);
-int move(Angle angle, dynamixel::PacketHandler* packet,int ms = 0);
+int move(Angle angle, dynamixel::PacketHandler* packet, int ms = 0);
 double dpi(double q);
 void getXYZABR(Hmatrix fkm);
 Hmatrix setTcp(double x, double y, double z);
 Ori getrpy(Hmatrix m);
 
 int main(int arg, char* args[]) {
-	wfile.open("C:/Users/shwan/Downloads/log.txt");
-	if (!wfile.is_open()) {
-		std::cout << "파일 문제 있음" << std::endl;
-		return 0;
-	}
-
-
 	dynamixel::PacketHandler* packet = dynamixel::PacketHandler::getPacketHandler(2.0);
 	Dxl::init();
 	h6g = setTcp(0, 0, 58);
@@ -340,8 +330,6 @@ int main(int arg, char* args[]) {
 			std::cout << "EE x,y,z,a,b,r : ";
 			std::cin >> ik_x >> ik_y >> ik_z >> ik_a >> ik_b >> ik_r;
 
-			wfile << "EE - " << ik_x << " " << ik_y << " " << ik_z << " " << ik_a << " " << ik_b << " " << ik_r << std::endl;
-
 			for (int i = 0; i < 6; i++) {
 				std::cout << "ID - " << i << " " << dxl[i].read(Present_Position, packet);
 			}
@@ -379,8 +367,6 @@ int main(int arg, char* args[]) {
 		}
 	}
 
-	wfile.close();
-
 	//end
 	for (int i = 0; i < 6; i++) {
 		dxl[i].disable(packet);
@@ -391,6 +377,7 @@ int main(int arg, char* args[]) {
 
 	return 0;
 }
+
 void delay(int ms) {
 	if (ms < 0) return;
 
@@ -455,10 +442,7 @@ Ori getrpy(Hmatrix m)
 
 Angle ik(double x, double y, double z, double a, double b, double r, dynamixel::PacketHandler* packet)
 {
-	wfile << "현재 모터 위치 " << dxl[0].read(Present_Position, packet) << " " << dxl[1].read(Present_Position, packet) << " " << dxl[2].read(Present_Position, packet) << " "
-		<< dxl[3].read(Present_Position, packet) << " " << dxl[4].read(Present_Position, packet) << " " << dxl[5].read(Present_Position, packet) << std::endl;
-
-	Hmatrix h0g = h.trans(x, y, z)* h.rotZ(a)* h.rotY(b)* h.rotX(r);
+	Hmatrix h0g = h.trans(x, y, z) * h.rotZ(a) * h.rotY(b) * h.rotX(r);
 	Hmatrix h06 = h0g * h6g.inv();
 
 	x = h06.e[0][3];
@@ -607,12 +591,10 @@ Angle ik(double x, double y, double z, double a, double b, double r, dynamixel::
 	return angle;
 }
 
-int move(Angle angle, dynamixel::PacketHandler* packet,int ms)
+int move(Angle angle, dynamixel::PacketHandler* packet, int ms)
 {
 	Angle pos;
 	bool disable = false;
-
-	wfile << "목표 각도 " << angle.q[0] << " " << angle.q[1] << " " << angle.q[2] << " " << angle.q[3] << " " << angle.q[4] << " " << angle.q[5] << std::endl;
 
 	for (int i = 0; i < 6; i++) {
 		pos.q[i] = angle2pos(angle.q[i]);
@@ -621,8 +603,6 @@ int move(Angle angle, dynamixel::PacketHandler* packet,int ms)
 			disable = true;
 		}
 	}
-
-	wfile << "목표 위치 " << pos.q[0] << " " << pos.q[1] << " " << pos.q[2] << " " << pos.q[3] << " " << pos.q[4] << " " << pos.q[5] << std::endl;
 
 	if (disable) {
 		return 0;
@@ -646,22 +626,12 @@ int move(Angle angle, dynamixel::PacketHandler* packet,int ms)
 			}
 		}
 
-		wfile << dxl[0].read(Present_Position, packet) << " " << dxl[1].read(Present_Position, packet) << " " << dxl[2].read(Present_Position, packet) << " "
-			<< dxl[3].read(Present_Position, packet) << " " << dxl[4].read(Present_Position, packet) << " " << dxl[5].read(Present_Position, packet) << std::endl;
-
 		delay(10);
 
 		if (!moving) {
 			break;
 		}
 	}
-
-	for (int i = 0; i < 5; i++) {
-		wfile << dxl[0].read(Present_Position, packet) << " " << dxl[1].read(Present_Position, packet) << " " << dxl[2].read(Present_Position, packet) << " "
-			<< dxl[3].read(Present_Position, packet) << " " << dxl[4].read(Present_Position, packet) << " " << dxl[5].read(Present_Position, packet) << std::endl;
-	}
-
-	wfile << std::endl << std::endl;
 
 	return 1;
 }

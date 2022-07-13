@@ -2,10 +2,10 @@
 #include <iostream>
 #include <cassert>
 
-#include "port_handler_windows.h"
-#include "packet_handler.h"
+#include "dynamixel_sdk/dynamixel_sdk.h"
 
-//EEPROM		¿Ã∏ß		 ¡÷º“	≈©±‚
+
+//EEPROM		Ïù¥Î¶Ñ		Ï£ºÏÜå	ÌÅ¨Í∏∞
 #define Model_Number			0	//2
 #define Model_Information		2	//4
 #define Firmware_Version		6	//1
@@ -27,6 +27,7 @@
 #define Max_Position_Limit		48	//4
 #define	Min_Position_Limit		52	//4
 #define	Shutdown				63	//1
+
 //RAM
 #define Torque_Enable			64	//1
 #define LED						65	//1
@@ -60,7 +61,9 @@
 #define Present_Input_Voltage	144 //2
 #define Present_Temperature		146	//1
 
+
 #define RESOLUTION 0.087890625
+
 
 class Dxl
 {
@@ -86,5 +89,6 @@ private:
 	//static dynamixel::PacketHandler* packet;
 };
 
+// Present position 2048 = 0 degree (ccw)
 int angle2pos(double angle);
 double pos2angle(int pos);
